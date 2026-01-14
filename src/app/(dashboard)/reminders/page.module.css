@@ -1,3 +1,149 @@
 .page {
     animation: fadeIn var(--transition-base) ease-out;
 }
+
+.alertBanner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-6);
+}
+
+.alertIcon {
+    font-size: 1.5rem;
+}
+
+.filterTabs {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+    flex-wrap: wrap;
+}
+
+.filterTab {
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--color-border);
+    background: transparent;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    transition: all var(--transition-fast);
+}
+
+.filterTab:hover {
+    border-color: var(--color-primary);
+}
+
+.filterTab.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+}
+
+.reminderList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.reminderCard {
+    padding: var(--space-4);
+    transition: all var(--transition-base);
+}
+
+.reminderCard.completed {
+    opacity: 0.6;
+}
+
+.reminderCard.completed .cardTitle {
+    text-decoration: line-through;
+}
+
+.reminderCard.overdue {
+    border-color: var(--color-danger);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), transparent);
+}
+
+.reminderCard.urgent {
+    border-color: var(--color-warning);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), transparent);
+}
+
+.cardMain {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-4);
+}
+
+.checkbox {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: transform var(--transition-fast);
+}
+
+.checkbox:hover {
+    transform: scale(1.1);
+}
+
+.cardInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.cardTitle {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    margin-bottom: var(--space-1);
+}
+
+.cardDesc {
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-2);
+}
+
+.cardMeta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.dueDate {
+    font-size: var(--text-sm);
+    color: var(--color-text-tertiary);
+}
+
+.cardAmount {
+    text-align: right;
+}
+
+.cardActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border);
+}
+
+@media (max-width: 640px) {
+    .cardMain {
+        flex-wrap: wrap;
+    }
+
+    .cardAmount {
+        width: 100%;
+        text-align: left;
+        margin-top: var(--space-2);
+    }
+}
