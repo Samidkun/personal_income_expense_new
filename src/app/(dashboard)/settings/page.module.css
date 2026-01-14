@@ -1,0 +1,131 @@
+.page {
+    animation: fadeIn var(--transition-base) ease-out;
+}
+
+.settingsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: var(--space-5);
+}
+
+.settingCard {
+    padding: var(--space-6);
+}
+
+.settingTitle {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    margin-bottom: var(--space-2);
+}
+
+.settingDesc {
+    color: var(--color-text-tertiary);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-5);
+}
+
+/* Theme */
+.themeOptions {
+    display: flex;
+    gap: var(--space-3);
+}
+
+.themeBtn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: transparent;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    color: var(--color-text-secondary);
+}
+
+.themeBtn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-text-primary);
+}
+
+.themeBtn.active {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+}
+
+.themeIcon {
+    font-size: 1.5rem;
+}
+
+/* API */
+.apiList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.apiItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-md);
+}
+
+.apiInfo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.apiName {
+    font-weight: 500;
+}
+
+.apiStatus {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+}
+
+.apiNote {
+    font-size: var(--text-sm);
+    color: var(--color-text-tertiary);
+    padding: var(--space-3);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-md);
+    margin: 0;
+}
+
+/* Data */
+.dataActions {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+/* Account */
+.accountActions {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+/* About */
+.aboutInfo {
+    text-align: center;
+}
+
+.aboutInfo p {
+    margin: 0;
+    margin-bottom: var(--space-1);
+}
+
+.version {
+    color: var(--color-text-tertiary);
+    font-size: var(--text-sm);
+}

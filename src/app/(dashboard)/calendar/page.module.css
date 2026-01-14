@@ -1,0 +1,225 @@
+.page {
+    animation: fadeIn var(--transition-base) ease-out;
+}
+
+.monthNav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+}
+
+.currentMonth {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    min-width: 180px;
+    text-align: center;
+}
+
+.calendarContainer {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: var(--space-6);
+}
+
+@media (max-width: 900px) {
+    .calendarContainer {
+        grid-template-columns: 1fr;
+    }
+}
+
+.calendar {
+    position: relative;
+    padding: var(--space-4);
+}
+
+.loadingOverlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    border-radius: var(--radius-xl);
+}
+
+[data-theme="dark"] .loadingOverlay {
+    background: rgba(15, 23, 42, 0.8);
+}
+
+.weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: var(--space-2);
+}
+
+.weekday {
+    text-align: center;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    padding: var(--space-2);
+}
+
+.days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.day {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+    gap: var(--space-1);
+}
+
+.day:hover:not(.empty) {
+    background: var(--color-bg-tertiary);
+}
+
+.day.empty {
+    cursor: default;
+}
+
+.day.today {
+    background: var(--color-primary-light);
+}
+
+.day.today .dayNumber {
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
+.day.selected {
+    background: var(--color-primary);
+}
+
+.day.selected .dayNumber {
+    color: white;
+}
+
+.dayNumber {
+    font-size: var(--text-sm);
+    font-weight: 500;
+}
+
+.dayIndicators {
+    display: flex;
+    gap: 3px;
+}
+
+.incomeIndicator,
+.expenseIndicator {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.incomeIndicator {
+    background: var(--color-success);
+}
+
+.expenseIndicator {
+    background: var(--color-danger);
+}
+
+/* Day Detail */
+.dayDetail {
+    padding: var(--space-5);
+    height: fit-content;
+    position: sticky;
+    top: var(--space-4);
+}
+
+.detailTitle {
+    font-size: var(--text-lg);
+    margin-bottom: var(--space-4);
+}
+
+.detailSummary {
+    display: flex;
+    gap: var(--space-4);
+    margin-bottom: var(--space-5);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.summaryItem {
+    flex: 1;
+}
+
+.summaryLabel {
+    display: block;
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    margin-bottom: var(--space-1);
+}
+
+.txList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.txItem {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.txIcon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.txInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.txDesc {
+    font-size: var(--text-sm);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.noTx {
+    text-align: center;
+    color: var(--color-text-tertiary);
+    padding: var(--space-4);
+}
+
+.noSelection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-8);
+    color: var(--color-text-tertiary);
+    text-align: center;
+}
+
+.noSelection span {
+    font-size: 2rem;
+    margin-bottom: var(--space-2);
+}
+
+.noSelection p {
+    margin: 0;
+}

@@ -1,0 +1,130 @@
+.page {
+    animation: fadeIn var(--transition-base) ease-out;
+}
+
+.filters {
+    display: flex;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+    flex-wrap: wrap;
+}
+
+.filterGroup {
+    flex: 1;
+    min-width: 150px;
+    max-width: 200px;
+}
+
+.transactionList {
+    display: flex;
+    flex-direction: column;
+}
+
+.txRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+    transition: background var(--transition-fast);
+}
+
+.txRow:last-child {
+    border-bottom: none;
+}
+
+.txRow:hover {
+    background: var(--color-bg-tertiary);
+}
+
+.txIcon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.txInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.txDesc {
+    font-weight: 500;
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-1);
+}
+
+.txMeta {
+    font-size: var(--text-sm);
+    color: var(--color-text-tertiary);
+    margin: 0;
+}
+
+.txRight {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-2);
+}
+
+.txActions {
+    display: flex;
+    gap: var(--space-1);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.txRow:hover .txActions {
+    opacity: 1;
+}
+
+/* Type Toggle */
+.typeToggle {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-5);
+}
+
+.typeBtn {
+    flex: 1;
+    padding: var(--space-3);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: transparent;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+    color: var(--color-text-secondary);
+}
+
+.typeBtn.expense.active {
+    border-color: var(--color-danger);
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+}
+
+.typeBtn.income.active {
+    border-color: var(--color-success);
+    background: var(--color-success-light);
+    color: var(--color-success);
+}
+
+@media (max-width: 768px) {
+    .filterGroup {
+        max-width: none;
+    }
+
+    .txRight {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .txActions {
+        opacity: 1;
+    }
+}

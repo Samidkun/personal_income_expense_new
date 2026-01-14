@@ -1,0 +1,203 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// Wallet types: CASH, BANK, EWALLET
+enum WalletType {
+  CASH
+  BANK
+  EWALLET
+}
+
+// Transaction types: INCOME, EXPENSE
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+// Recurring frequency
+enum Frequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+// Theme options
+enum Theme {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
+// Wallet model - for multiple wallets (Cash, Bank, E-wallet)
+model Wallet {
+  id           String        @id @default(cuid())
+  name         String
+  type         WalletType
+  balance      Decimal       @default(0) @db.Decimal(15, 2)
+  currency     String        @default("IDR")
+  color        String        @default("#3B82F6")
+  icon         String        @default("wallet")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  transactions Transaction[]
+
+  @@map("wallets")
+}
+
+// Category model - for income/expense categories
+model Category {
+  id           String            @id @default(cuid())
+  name         String
+  icon         String            @default("tag")
+  color        String            @default("#6B7280")
+  type         TransactionType
+  isDefault    Boolean           @default(false)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  transactions Transaction[]
+  budgets      Budget[]
+  recurring    RecurringTransaction[]
+
+  @@map("categories")
+}
+
+// Transaction model - main income/expense records
+model Transaction {
+  id          String          @id @default(cuid())
+  amount      Decimal         @db.Decimal(15, 2)
+  type        TransactionType
+  description String?
+  date        DateTime        @default(now())
+  categoryId  String
+  category    Category        @relation(fields: [categoryId], references: [id])
+  walletId    String
+  wallet      Wallet          @relation(fields: [walletId], references: [id])
+  recurringId String?
+  recurring   RecurringTransaction? @relation(fields: [recurringId], references: [id])
+  tags        TransactionTag[]
+  attachments Attachment[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([date])
+  @@index([categoryId])
+  @@index([walletId])
+  @@map("transactions")
+}
+
+// Tag model - for additional transaction labeling
+model Tag {
+  id           String           @id @default(cuid())
+  name         String           @unique
+  color        String           @default("#9CA3AF")
+  createdAt    DateTime         @default(now())
+  transactions TransactionTag[]
+
+  @@map("tags")
+}
+
+// Junction table for Transaction-Tag many-to-many
+model TransactionTag {
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  tagId         String
+  tag           Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([transactionId, tagId])
+  @@map("transaction_tags")
+}
+
+// Attachment model - for receipt/invoice uploads
+model Attachment {
+  id            String      @id @default(cuid())
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  filename      String
+  originalName  String
+  mimeType      String
+  size          Int
+  url           String
+  createdAt     DateTime    @default(now())
+
+  @@map("attachments")
+}
+
+// Budget model - monthly spending limits per category
+model Budget {
+  id             String   @id @default(cuid())
+  categoryId     String
+  category       Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  amount         Decimal  @db.Decimal(15, 2)
+  month          Int      // 1-12
+  year           Int
+  alertThreshold Int      @default(80) // Alert when reaching this percentage
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([categoryId, month, year])
+  @@map("budgets")
+}
+
+// RecurringTransaction model - for automatic scheduled transactions
+model RecurringTransaction {
+  id          String          @id @default(cuid())
+  amount      Decimal         @db.Decimal(15, 2)
+  type        TransactionType
+  description String?
+  categoryId  String
+  category    Category        @relation(fields: [categoryId], references: [id])
+  walletId    String
+  frequency   Frequency
+  startDate   DateTime
+  nextDate    DateTime
+  endDate     DateTime?
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  transactions Transaction[]
+
+  @@map("recurring_transactions")
+}
+
+// Reminder model - for bill reminders with optional WhatsApp notification
+model Reminder {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?
+  amount        Decimal? @db.Decimal(15, 2)
+  dueDate       DateTime
+  isCompleted   Boolean  @default(false)
+  whatsappSent  Boolean  @default(false)
+  notifyDaysBefore Int   @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([dueDate])
+  @@map("reminders")
+}
+
+// Settings model - app configuration
+model Settings {
+  id              String  @id @default("default")
+  password        String  // Hashed password for simple auth
+  whatsappNumber  String?
+  defaultCurrency String  @default("IDR")
+  theme           Theme   @default(SYSTEM)
+  geminiApiKey    String?
+  fonntApiKey     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("settings")
+}

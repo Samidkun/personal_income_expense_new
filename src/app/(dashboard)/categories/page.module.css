@@ -1,0 +1,129 @@
+.page {
+    animation: fadeIn var(--transition-base) ease-out;
+}
+
+.tabs {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+    background: var(--color-bg-tertiary);
+    padding: var(--space-1);
+    border-radius: var(--radius-lg);
+    width: fit-content;
+}
+
+.tab {
+    padding: var(--space-3) var(--space-6);
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    transition: all var(--transition-fast);
+}
+
+.tab:hover {
+    color: var(--color-text-primary);
+}
+
+.tab.active {
+    background: var(--color-bg-secondary);
+    color: var(--color-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.categoryGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: var(--space-4);
+}
+
+.categoryCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: var(--space-5);
+    transition: all var(--transition-base);
+}
+
+.categoryCard:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.categoryIcon {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    margin-bottom: var(--space-3);
+}
+
+.categoryName {
+    font-size: var(--text-base);
+    font-weight: 600;
+    margin-bottom: var(--space-2);
+}
+
+.defaultBadge {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-tertiary);
+    font-size: var(--text-xs);
+}
+
+/* Icon Picker */
+.iconPicker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.iconBtn {
+    width: 40px;
+    height: 40px;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-secondary);
+    cursor: pointer;
+    font-size: 1.25rem;
+    transition: all var(--transition-fast);
+}
+
+.iconBtn:hover {
+    border-color: var(--color-primary);
+}
+
+.iconBtn.active {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+}
+
+/* Color Picker */
+.colorPicker {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.colorBtn {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    border: 3px solid transparent;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.colorBtn:hover {
+    transform: scale(1.1);
+}
+
+.colorBtn.active {
+    border-color: var(--color-text-primary);
+    box-shadow: var(--shadow-md);
+}

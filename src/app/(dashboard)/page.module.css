@@ -1,0 +1,264 @@
+.dashboard {
+    animation: fadeIn var(--transition-base) ease-out;
+}
+
+.balanceCard {
+    position: relative;
+}
+
+.balanceCard::before {
+    background: var(--gradient-hero) !important;
+}
+
+.walletCount {
+    font-size: var(--text-sm);
+    color: var(--color-text-tertiary);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: var(--space-6);
+}
+
+.recentCard {
+    grid-column: span 7;
+}
+
+.categoryCard {
+    grid-column: span 5;
+}
+
+.chartCard {
+    grid-column: span 12;
+}
+
+@media (max-width: 1024px) {
+
+    .recentCard,
+    .categoryCard,
+    .chartCard {
+        grid-column: span 12;
+    }
+}
+
+.cardHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-5);
+}
+
+.cardHeader h3 {
+    font-size: var(--text-lg);
+    font-weight: 600;
+}
+
+/* Transaction List */
+.transactionList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.transactionItem {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-3);
+    border-radius: var(--radius-lg);
+    transition: background var(--transition-fast);
+}
+
+.transactionItem:hover {
+    background: var(--color-bg-tertiary);
+}
+
+.txIcon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.txInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.txDesc {
+    font-weight: 500;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0;
+}
+
+.txMeta {
+    font-size: var(--text-sm);
+    color: var(--color-text-tertiary);
+    margin-bottom: 0;
+}
+
+/* Category List */
+.categoryList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.categoryItem {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--space-2);
+}
+
+.categoryInfo {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+}
+
+.categoryDot {
+    width: 12px;
+    height: 12px;
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+}
+
+.categoryValue {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    text-align: right;
+}
+
+.categoryAmount {
+    font-weight: 600;
+    font-size: var(--text-sm);
+    color: var(--color-text-primary);
+}
+
+.categoryPercent {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    min-width: 40px;
+}
+
+.categoryBar {
+    grid-column: span 2;
+    height: 6px;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.categoryProgress {
+    height: 100%;
+    border-radius: var(--radius-full);
+    transition: width var(--transition-slow);
+}
+
+/* Chart */
+.chartContainer {
+    padding-top: var(--space-4);
+}
+
+.barChart {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    height: 200px;
+    gap: var(--space-2);
+    padding: 0 var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.barGroup {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+
+.bars {
+    display: flex;
+    gap: 4px;
+    align-items: flex-end;
+    width: 100%;
+    height: 180px;
+    justify-content: center;
+}
+
+.bar {
+    width: 24px;
+    min-height: 4px;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    transition: height var(--transition-slow);
+    cursor: pointer;
+}
+
+.bar:hover {
+    opacity: 0.8;
+}
+
+.incomeBar {
+    background: var(--gradient-success);
+}
+
+.expenseBar {
+    background: var(--gradient-danger);
+}
+
+.barLabel {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    margin-top: var(--space-2);
+}
+
+.chartLegend {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-6);
+}
+
+.legendItem {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+}
+
+.legendDot {
+    width: 12px;
+    height: 12px;
+    border-radius: var(--radius-sm);
+}
+
+.incomeDot {
+    background: var(--color-success);
+}
+
+.expenseDot {
+    background: var(--color-danger);
+}
+
+/* Empty State */
+.emptyList {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-8);
+    text-align: center;
+    color: var(--color-text-tertiary);
+    gap: var(--space-3);
+}

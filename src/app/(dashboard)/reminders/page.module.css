@@ -1,0 +1,3 @@
+.page {
+    animation: fadeIn var(--transition-base) ease-out;
+}

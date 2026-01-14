@@ -1,0 +1,173 @@
+.page {
+    animation: fadeIn var(--transition-base) ease-out;
+}
+
+.monthSelector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+}
+
+.currentMonth {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    min-width: 180px;
+    text-align: center;
+}
+
+.summaryCard {
+    margin-bottom: var(--space-6);
+    padding: var(--space-6);
+}
+
+.summaryHeader {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--space-4);
+}
+
+.summaryRight {
+    text-align: right;
+}
+
+.summaryLabel {
+    font-size: var(--text-sm);
+    color: var(--color-text-tertiary);
+    margin-bottom: var(--space-1);
+}
+
+.summaryValue {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.overallProgress {
+    height: 12px;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin-bottom: var(--space-3);
+}
+
+.overallBar {
+    height: 100%;
+    background: var(--gradient-primary);
+    border-radius: var(--radius-full);
+    transition: width var(--transition-slow);
+}
+
+.overallBar.over {
+    background: var(--gradient-danger);
+}
+
+.remaining {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    text-align: center;
+    margin: 0;
+}
+
+.budgetGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--space-5);
+}
+
+.budgetCard {
+    transition: all var(--transition-base);
+}
+
+.budgetCard.warning {
+    border-color: var(--color-warning);
+}
+
+.budgetCard.over {
+    border-color: var(--color-danger);
+    background: var(--color-danger-light);
+}
+
+[data-theme="dark"] .budgetCard.over {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.budgetHeader {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.categoryIcon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.categoryName {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    margin-bottom: var(--space-1);
+}
+
+.budgetAmount {
+    font-size: var(--text-sm);
+    color: var(--color-text-tertiary);
+    margin: 0;
+}
+
+.progressContainer {
+    margin-bottom: var(--space-3);
+}
+
+.progressBar {
+    height: 8px;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin-bottom: var(--space-2);
+}
+
+.progress {
+    height: 100%;
+    background: var(--color-success);
+    border-radius: var(--radius-full);
+    transition: width var(--transition-slow);
+}
+
+.progressWarning {
+    background: var(--color-warning);
+}
+
+.progressOver {
+    background: var(--color-danger);
+}
+
+.progressInfo {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+}
+
+.overText {
+    color: var(--color-danger);
+    font-weight: 600;
+}
+
+.alertBadge {
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    text-align: center;
+}
