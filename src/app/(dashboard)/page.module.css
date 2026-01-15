@@ -1,5 +1,7 @@
 .dashboard {
     animation: fadeIn var(--transition-base) ease-out;
+    width: 100%;
+    overflow-x: hidden;
 }
 
 .balanceCard {
@@ -169,6 +171,8 @@
 /* Chart */
 .chartContainer {
     padding-top: var(--space-4);
+    overflow-x: auto;
+    width: 100%;
 }
 
 .barChart {
@@ -179,13 +183,8 @@
     gap: var(--space-2);
     padding: 0 var(--space-4);
     margin-bottom: var(--space-4);
-}
-
-.barGroup {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex: 1;
+    min-width: 300px;
+    /* Ensure minimum width for chart */
 }
 
 .bars {

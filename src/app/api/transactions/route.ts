@@ -107,6 +107,80 @@ export async function POST(request: NextRequest) {
             }
         })
 
+        // --- BUDGET ALERT LOGIC ---
+        if (type === 'EXPENSE') {
+            try {
+                // 1. Check if there is a budget for this category
+                const now = new Date(date || new Date())
+                const month = now.getMonth() + 1 // 1-indexed
+                const year = now.getFullYear()
+
+                const budget = await prisma.budget.findFirst({
+                    where: {
+                        categoryId,
+                        month,
+                        year
+                    },
+                    include: { category: true }
+                })
+
+                if (budget) {
+                    // 2. Calculate total spending for this category in this month
+                    const startOfMonth = new Date(year, month - 1, 1)
+                    const endOfMonth = new Date(year, month, 0, 23, 59, 59)
+
+                    const aggregations = await prisma.transaction.aggregate({
+                        _sum: { amount: true },
+                        where: {
+                            categoryId,
+                            type: 'EXPENSE',
+                            date: {
+                                gte: startOfMonth,
+                                lte: endOfMonth
+                            }
+                        }
+                    })
+
+                    const totalSpent = Number(aggregations._sum.amount || 0)
+                    const budgetLimit = Number(budget.amount)
+                    const percentage = (totalSpent / budgetLimit) * 100
+
+                    // 3. Send Alert if Threshold Reached (e.g. 80%)
+                    if (percentage >= budget.alertThreshold) {
+                        // Get Telegram Chat ID
+                        const settings = await prisma.settings.findUnique({ where: { id: 'default' } })
+
+                        if (settings?.telegramChatId) {
+                            const { sendTelegramMessage } = await import('@/lib/telegram')
+                            const formatter = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' })
+
+                            let alertLevel = '⚠️ Peringatan Budget'
+                            let emoji = '⚠️'
+                            if (percentage >= 100) {
+                                alertLevel = '🚨 OVER BUDGET!'
+                                emoji = '🚨'
+                            }
+
+                            const message = `<b>${emoji} ${alertLevel}</b>
+
+Kategori: <b>${budget.category.name}</b>
+Terpakai: <b>${formatter.format(totalSpent)}</b>
+Budget: ${formatter.format(budgetLimit)}
+Persentase: <b>${percentage.toFixed(1)}%</b>
+
+${percentage >= 100 ? 'Stop jajan! Udah tekor nih!' : 'Hati-hati, jatah menipis!'}`
+
+                            await sendTelegramMessage(settings.telegramChatId, message)
+                        }
+                    }
+                }
+            } catch (alertError) {
+                console.error('Failed to send budget alert:', alertError)
+                // Don't fail the transaction just because alert failed
+            }
+        }
+        // --------------------------
+
         return NextResponse.json({
             success: true,
             data: { ...transaction, amount: Number(transaction.amount) }

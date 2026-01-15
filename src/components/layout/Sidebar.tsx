@@ -47,7 +47,9 @@ export default function Sidebar() {
     // Add router
     const router = require('next/navigation').useRouter()
     const { isOpen, toggle } = useSidebar()
+    const [isMobileOpen, setIsMobileOpen] = useState(false)
 
+    // Handlers
     const handleLogout = async () => {
         try {
             await fetch('/api/auth/logout', { method: 'POST' })
@@ -58,13 +60,27 @@ export default function Sidebar() {
         }
     }
 
+    const toggleMobile = () => setIsMobileOpen(!isMobileOpen)
+    const closeMobile = () => setIsMobileOpen(false)
+
     return (
         <>
-            <aside className={`${styles.sidebar} ${isOpen ? styles.open : ''}`}>
+            {/* Overlay Backdrop */}
+            {isMobileOpen && (
+                <div
+                    style={{
+                        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 99
+                    }}
+                    onClick={closeMobile}
+                />
+            )}
+
+            <aside className={`${styles.sidebar} ${isOpen ? styles.open : ''} ${isMobileOpen ? styles.open : ''}`}>
                 <div className={styles.header}>
-                    <Link href="/" className={styles.logo}>
+                    <Link href="/" className={styles.logo} onClick={closeMobile}>
                         <span className={styles.logoIcon}>💸</span>
-                        {isOpen && <span className={styles.logoText}>SamidTrack</span>}
+                        {/* Always show text on mobile if open, or if desktop open */}
+                        {(isOpen || isMobileOpen) && <span className={styles.logoText}>SamidTrack</span>}
                     </Link>
                     <button className={styles.toggleBtn} onClick={toggle}>
                         {isOpen ? '◀' : '▶'}
@@ -77,9 +93,10 @@ export default function Sidebar() {
                             key={item.href}
                             href={item.href}
                             className={`${styles.navItem} ${pathname === item.href ? styles.active : ''}`}
+                            onClick={closeMobile}
                         >
                             <span className={styles.navIcon}>{item.icon}</span>
-                            {isOpen && <span className={styles.navLabel}>{item.label}</span>}
+                            {(isOpen || isMobileOpen) && <span className={styles.navLabel}>{item.label}</span>}
                         </Link>
                     ))}
                 </nav>
@@ -87,14 +104,22 @@ export default function Sidebar() {
                 <div className={styles.footer}>
                     <button className={styles.logoutBtn} onClick={handleLogout}>
                         <span className={styles.navIcon}>🚪</span>
-                        {isOpen && <span>Keluar</span>}
+                        {(isOpen || isMobileOpen) && <span>Keluar</span>}
                     </button>
                 </div>
             </aside>
 
-            {/* Mobile bottom nav */}
+            {/* Mobile Hamburger Button */}
+            <button
+                className={styles.mobileHamburger}
+                onClick={toggleMobile}
+            >
+                ☰
+            </button>
+
+            {/* Mobile bottom nav - Quick Actions Only */}
             <nav className={styles.mobileNav}>
-                {menuItems.slice(0, 5).map((item) => (
+                {menuItems.slice(0, 4).map((item) => (
                     <Link
                         key={item.href}
                         href={item.href}
