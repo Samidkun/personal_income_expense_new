@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState } from 'react'
+import useSWR, { mutate } from 'swr'
 import styles from './page.module.css'
 
 interface Category {
@@ -27,6 +28,9 @@ interface Transaction {
     wallet: Wallet
 }
 
+// Fetcher for SWR
+const fetcher = (url: string) => fetch(url).then((res) => res.json().then(data => data.data))
+
 function formatCurrency(amount: number): string {
     return new Intl.NumberFormat('id-ID', {
         style: 'currency',
@@ -45,12 +49,11 @@ function formatDate(dateString: string): string {
 }
 
 export default function TransactionsPage() {
-    const [transactions, setTransactions] = useState<Transaction[]>([])
-    const [categories, setCategories] = useState<Category[]>([])
-    const [wallets, setWallets] = useState<Wallet[]>([])
-    const [loading, setLoading] = useState(true)
+    // Local state for UI only
     const [showModal, setShowModal] = useState(false)
     const [editingId, setEditingId] = useState<string | null>(null)
+    const [aiLoading, setAiLoading] = useState(false)
+    const [uploading, setUploading] = useState(false)
 
     // Filters
     const [filterType, setFilterType] = useState<'all' | 'INCOME' | 'EXPENSE'>('all')
@@ -64,47 +67,57 @@ export default function TransactionsPage() {
         description: '',
         date: new Date().toISOString().split('T')[0],
         categoryId: '',
-        walletId: ''
+        walletId: '',
+        selectedTags: [] as string[],
+        file: null as File | null
     })
 
-    const fetchData = useCallback(async () => {
+    // SWR Data Fetching
+    const params = new URLSearchParams()
+    if (filterType !== 'all') params.set('type', filterType)
+    if (filterCategory) params.set('categoryId', filterCategory)
+    if (filterWallet) params.set('walletId', filterWallet)
+
+    const { data: transactions = [], error: txError, isLoading: txLoading } = useSWR<Transaction[]>(
+        `/api/transactions?${params}`,
+        fetcher
+    )
+    const { data: categories = [] } = useSWR<Category[]>('/api/categories', fetcher)
+    const { data: wallets = [] } = useSWR<Wallet[]>('/api/wallets', fetcher)
+    const { data: tags = [] } = useSWR<{ id: string; name: string }[]>('/api/tags', fetcher)
+
+    const loading = txLoading
+
+
+
+    const handleAiCategorize = async () => {
+        if (!form.description) return
+        setAiLoading(true)
         try {
-            setLoading(true)
-            const params = new URLSearchParams()
-            if (filterType !== 'all') params.set('type', filterType)
-            if (filterCategory) params.set('categoryId', filterCategory)
-            if (filterWallet) params.set('walletId', filterWallet)
-
-            const [txRes, catRes, walletRes] = await Promise.all([
-                fetch(`/api/transactions?${params}`),
-                fetch('/api/categories'),
-                fetch('/api/wallets')
-            ])
-
-            const [txData, catData, walletData] = await Promise.all([
-                txRes.json(),
-                catRes.json(),
-                walletRes.json()
-            ])
-
-            if (txData.success) setTransactions(txData.data)
-            if (catData.success) setCategories(catData.data)
-            if (walletData.success) setWallets(walletData.data)
+            const res = await fetch('/api/ai/categorize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    description: form.description,
+                    type: form.type
+                })
+            })
+            const data = await res.json()
+            if (data.success) {
+                setForm(prev => ({ ...prev, categoryId: data.data.categoryId }))
+            }
         } catch (error) {
-            console.error('Error fetching data:', error)
+            console.error('AI error:', error)
         } finally {
-            setLoading(false)
+            setAiLoading(false)
         }
-    }, [filterType, filterCategory, filterWallet])
-
-    useEffect(() => {
-        fetchData()
-    }, [fetchData])
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
         try {
+            // 1. Create/Update Transaction
             const url = editingId ? `/api/transactions/${editingId}` : '/api/transactions'
             const method = editingId ? 'PUT' : 'POST'
 
@@ -112,24 +125,45 @@ export default function TransactionsPage() {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    ...form,
-                    amount: parseFloat(form.amount)
+                    amount: parseFloat(form.amount),
+                    type: form.type,
+                    description: form.description,
+                    date: form.date,
+                    categoryId: form.categoryId,
+                    walletId: form.walletId,
+                    tagIds: form.selectedTags
                 })
             })
 
             const data = await res.json()
 
             if (data.success) {
+                // 2. Upload Attachment if exists (only for new transactions for now)
+                if (form.file && !editingId) {
+                    setUploading(true)
+                    const formData = new FormData()
+                    formData.append('file', form.file)
+                    formData.append('transactionId', data.data.id)
+
+                    await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    setUploading(false)
+                }
+
                 setShowModal(false)
                 setEditingId(null)
                 resetForm()
-                fetchData()
+                mutate(`/api/transactions?${params}`)
+                mutate('/api/dashboard')
             } else {
                 alert(data.error || 'Gagal menyimpan transaksi')
             }
         } catch (error) {
             console.error('Error saving transaction:', error)
             alert('Terjadi kesalahan')
+            setUploading(false)
         }
     }
 
@@ -141,7 +175,8 @@ export default function TransactionsPage() {
             const data = await res.json()
 
             if (data.success) {
-                fetchData()
+                mutate(`/api/transactions?${params}`)
+                mutate('/api/dashboard')
             } else {
                 alert(data.error || 'Gagal menghapus')
             }
@@ -157,7 +192,9 @@ export default function TransactionsPage() {
             description: tx.description || '',
             date: new Date(tx.date).toISOString().split('T')[0],
             categoryId: tx.category.id,
-            walletId: tx.wallet.id
+            walletId: tx.wallet.id,
+            selectedTags: [], // TODO: Populate tags if available in tx
+            file: null
         })
         setEditingId(tx.id)
         setShowModal(true)
@@ -170,7 +207,9 @@ export default function TransactionsPage() {
             description: '',
             date: new Date().toISOString().split('T')[0],
             categoryId: '',
-            walletId: ''
+            walletId: '',
+            selectedTags: [],
+            file: null
         })
     }
 
@@ -284,113 +323,157 @@ export default function TransactionsPage() {
             </div>
 
             {/* Modal */}
-            {showModal && (
-                <div className="modal-overlay open" onClick={() => setShowModal(false)}>
-                    <div className="modal" onClick={e => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h3 className="modal-title">
-                                {editingId ? 'Edit Transaksi' : 'Tambah Transaksi'}
-                            </h3>
-                            <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)}>✕</button>
+            {
+                showModal && (
+                    <div className="modal-overlay open" onClick={() => setShowModal(false)}>
+                        <div className="modal" onClick={e => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <h3 className="modal-title">
+                                    {editingId ? 'Edit Transaksi' : 'Tambah Transaksi'}
+                                </h3>
+                                <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)}>✕</button>
+                            </div>
+
+                            <form onSubmit={handleSubmit}>
+                                <div className="modal-body">
+                                    {/* Type Toggle */}
+                                    <div className={styles.typeToggle}>
+                                        <button
+                                            type="button"
+                                            className={`${styles.typeBtn} ${form.type === 'EXPENSE' ? styles.active : ''} ${styles.expense}`}
+                                            onClick={() => setForm({ ...form, type: 'EXPENSE', categoryId: '' })}
+                                        >
+                                            Pengeluaran
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={`${styles.typeBtn} ${form.type === 'INCOME' ? styles.active : ''} ${styles.income}`}
+                                            onClick={() => setForm({ ...form, type: 'INCOME', categoryId: '' })}
+                                        >
+                                            Pemasukan
+                                        </button>
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label className="form-label">Jumlah</label>
+                                        <input
+                                            type="number"
+                                            className="form-input"
+                                            placeholder="0"
+                                            value={form.amount}
+                                            onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label className="form-label">Deskripsi</label>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <input
+                                                type="text"
+                                                className="form-input"
+                                                placeholder="Catatan..."
+                                                value={form.description}
+                                                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                                            />
+                                            <button
+                                                type="button"
+                                                className="btn btn-secondary"
+                                                onClick={handleAiCategorize}
+                                                disabled={!form.description || aiLoading}
+                                                title="Auto-categorize with AI"
+                                            >
+                                                {aiLoading ? '🤖...' : '✨ Auto'}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label className="form-label">Kategori</label>
+                                        <select
+                                            className="form-select"
+                                            value={form.categoryId}
+                                            onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+                                            required
+                                        >
+                                            <option value="">Pilih Kategori</option>
+                                            {filteredCategories.map(c => (
+                                                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label className="form-label">Dompet</label>
+                                        <select
+                                            className="form-select"
+                                            value={form.walletId}
+                                            onChange={(e) => setForm({ ...form, walletId: e.target.value })}
+                                            required
+                                        >
+                                            <option value="">Pilih Dompet</option>
+                                            {wallets.map(w => (
+                                                <option key={w.id} value={w.id}>{w.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label className="form-label">Tags (Opsional)</label>
+                                        <div className={styles.tagsWrapper}>
+                                            {tags.map(tag => (
+                                                <button
+                                                    key={tag.id}
+                                                    type="button"
+                                                    className={`${styles.tagOption} ${form.selectedTags.includes(tag.id) ? styles.active : ''}`}
+                                                    onClick={() => {
+                                                        const newTags = form.selectedTags.includes(tag.id)
+                                                            ? form.selectedTags.filter(id => id !== tag.id)
+                                                            : [...form.selectedTags, tag.id]
+                                                        setForm({ ...form, selectedTags: newTags })
+                                                    }}
+                                                >
+                                                    {tag.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label className="form-label">Lampiran (Opsional)</label>
+                                        <input
+                                            type="file"
+                                            className="form-input"
+                                            accept="image/*,.pdf"
+                                            onChange={(e) => setForm({ ...form, file: e.target.files?.[0] || null })}
+                                        />
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label className="form-label">Tanggal</label>
+                                        <input
+                                            type="date"
+                                            className="form-input"
+                                            value={form.date}
+                                            onChange={(e) => setForm({ ...form, date: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="modal-footer">
+                                    <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                                        Batal
+                                    </button>
+                                    <button type="submit" className="btn btn-primary" disabled={uploading}>
+                                        {uploading ? 'Mengupload...' : (editingId ? 'Simpan' : 'Tambah')}
+                                    </button>
+                                </div>
+                            </form>
                         </div>
-
-                        <form onSubmit={handleSubmit}>
-                            <div className="modal-body">
-                                {/* Type Toggle */}
-                                <div className={styles.typeToggle}>
-                                    <button
-                                        type="button"
-                                        className={`${styles.typeBtn} ${form.type === 'EXPENSE' ? styles.active : ''} ${styles.expense}`}
-                                        onClick={() => setForm({ ...form, type: 'EXPENSE', categoryId: '' })}
-                                    >
-                                        Pengeluaran
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className={`${styles.typeBtn} ${form.type === 'INCOME' ? styles.active : ''} ${styles.income}`}
-                                        onClick={() => setForm({ ...form, type: 'INCOME', categoryId: '' })}
-                                    >
-                                        Pemasukan
-                                    </button>
-                                </div>
-
-                                <div className="form-group">
-                                    <label className="form-label">Jumlah</label>
-                                    <input
-                                        type="number"
-                                        className="form-input"
-                                        placeholder="0"
-                                        value={form.amount}
-                                        onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                                        required
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label className="form-label">Kategori</label>
-                                    <select
-                                        className="form-select"
-                                        value={form.categoryId}
-                                        onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-                                        required
-                                    >
-                                        <option value="">Pilih Kategori</option>
-                                        {filteredCategories.map(c => (
-                                            <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className="form-group">
-                                    <label className="form-label">Dompet</label>
-                                    <select
-                                        className="form-select"
-                                        value={form.walletId}
-                                        onChange={(e) => setForm({ ...form, walletId: e.target.value })}
-                                        required
-                                    >
-                                        <option value="">Pilih Dompet</option>
-                                        {wallets.map(w => (
-                                            <option key={w.id} value={w.id}>{w.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className="form-group">
-                                    <label className="form-label">Tanggal</label>
-                                    <input
-                                        type="date"
-                                        className="form-input"
-                                        value={form.date}
-                                        onChange={(e) => setForm({ ...form, date: e.target.value })}
-                                        required
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label className="form-label">Deskripsi (opsional)</label>
-                                    <input
-                                        type="text"
-                                        className="form-input"
-                                        placeholder="Catatan..."
-                                        value={form.description}
-                                        onChange={(e) => setForm({ ...form, description: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="modal-footer">
-                                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
-                                    Batal
-                                </button>
-                                <button type="submit" className="btn btn-primary">
-                                    {editingId ? 'Simpan' : 'Tambah'}
-                                </button>
-                            </div>
-                        </form>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     )
 }

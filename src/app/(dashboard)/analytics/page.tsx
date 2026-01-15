@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState } from 'react'
+import useSWR from 'swr'
 import styles from './page.module.css'
 
 interface MonthlyData {
@@ -46,6 +47,9 @@ interface AnalyticsData {
     }
 }
 
+// Fetcher for SWR
+const fetcher = (url: string) => fetch(url).then((res) => res.json().then(data => data.data))
+
 function formatCurrency(amount: number): string {
     return new Intl.NumberFormat('id-ID', {
         style: 'currency',
@@ -56,29 +60,11 @@ function formatCurrency(amount: number): string {
 }
 
 export default function AnalyticsPage() {
-    const [data, setData] = useState<AnalyticsData | null>(null)
-    const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState<'monthly' | 'category' | 'daily'>('monthly')
 
-    const fetchAnalytics = useCallback(async () => {
-        try {
-            setLoading(true)
-            const res = await fetch('/api/analytics?months=12')
-            const result = await res.json()
-
-            if (result.success) {
-                setData(result.data)
-            }
-        } catch (error) {
-            console.error('Error fetching analytics:', error)
-        } finally {
-            setLoading(false)
-        }
-    }, [])
-
-    useEffect(() => {
-        fetchAnalytics()
-    }, [fetchAnalytics])
+    // SWR Data Fetching
+    const { data, error, isLoading } = useSWR<AnalyticsData>('/api/analytics?months=12', fetcher)
+    const loading = isLoading
 
     const handleExport = async (format: 'csv' | 'json') => {
         try {

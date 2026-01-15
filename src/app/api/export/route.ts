@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
 
             const csv = [
                 headers.join(','),
-                ...rows.map(row => row.map((cell: any) =>
+                ...rows.map((row: any) => row.map((cell: any) =>
                     typeof cell === 'string' && cell.includes(',') ? `"${cell}"` : cell
                 ).join(','))
             ].join('\n')

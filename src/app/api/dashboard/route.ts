@@ -94,33 +94,40 @@ export async function GET() {
             .sort((a: any, b: any) => b.total - a.total)
             .slice(0, 6)
 
-        // Get monthly trend (last 6 months)
-        const monthlyTrend: Array<{ month: string; income: number; expense: number }> = []
-        for (let i = 5; i >= 0; i--) {
-            const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1)
-            const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0)
+        // Get monthly trend (last 6 months) - Optimized
+        const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1)
 
-            const transactions = await prisma.transaction.findMany({
-                where: {
-                    date: {
-                        gte: monthStart,
-                        lte: monthEnd
-                    }
-                }
+        // Single query for trend data
+        const trendTransactions = await prisma.transaction.findMany({
+            where: {
+                date: { gte: sixMonthsAgo }
+            },
+            select: { date: true, type: true, amount: true }
+        })
+
+        const monthlyTrend = []
+        for (let i = 5; i >= 0; i--) {
+            const targetDate = new Date(now.getFullYear(), now.getMonth() - i, 1)
+            const monthLabel = targetDate.toLocaleDateString('id-ID', { month: 'short' })
+
+            // Filter in memory
+            const monthTx = trendTransactions.filter((t: any) => {
+                const d = new Date(t.date)
+                return d.getMonth() === targetDate.getMonth() && d.getFullYear() === targetDate.getFullYear()
             })
 
-            const monthIncome = transactions
+            const income = monthTx
                 .filter((t: any) => t.type === 'INCOME')
                 .reduce((sum: number, t: any) => sum + Number(t.amount), 0)
 
-            const monthExpense = transactions
+            const expense = monthTx
                 .filter((t: any) => t.type === 'EXPENSE')
                 .reduce((sum: number, t: any) => sum + Number(t.amount), 0)
 
             monthlyTrend.push({
-                month: monthStart.toLocaleDateString('id-ID', { month: 'short' }),
-                income: monthIncome,
-                expense: monthExpense
+                month: monthLabel,
+                income,
+                expense
             })
         }
 
@@ -155,7 +162,12 @@ export async function GET() {
     } catch (error) {
         console.error('Dashboard API error:', error)
         return NextResponse.json(
-            { success: false, error: 'Failed to fetch dashboard data' },
+            {
+                success: false,
+                error: 'Failed to fetch dashboard data',
+                details: error instanceof Error ? error.message : String(error),
+                stack: error instanceof Error ? error.stack : undefined
+            },
             { status: 500 }
         )
     }

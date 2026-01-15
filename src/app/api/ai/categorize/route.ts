@@ -27,9 +27,9 @@ export async function POST(request: NextRequest) {
             where: type ? { type } : undefined
         })
 
-        const categoryList = categories.map(c => `- ${c.name} (${c.type})`).join('\n')
+        const categoryList = categories.map((c: any) => `- ${c.name} (${c.type})`).join('\n')
 
-        // Call Gemini API
+        // Call Gemini API (Direct or via OpenRouter)
         const prompt = `Berdasarkan deskripsi transaksi berikut, pilih kategori yang paling sesuai.
 
 Deskripsi: "${description}"
@@ -40,32 +40,67 @@ ${categoryList}
 
 Balas HANYA dengan nama kategori yang paling sesuai, tanpa penjelasan.`
 
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: {
-                        temperature: 0.1,
-                        maxOutputTokens: 50
-                    }
-                })
+        let apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`
+        let headers: any = { 'Content-Type': 'application/json' }
+        let bodyPayload: any = {
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+                temperature: 0.1,
+                maxOutputTokens: 50
             }
-        )
+        }
+
+        const isOpenRouter = apiKey.startsWith('sk-or-')
+        console.log('[AI] Key Type:', isOpenRouter ? 'OpenRouter' : 'Gemini Direct')
+        console.log('[AI] Processing:', description)
+
+        if (isOpenRouter) {
+            apiUrl = 'https://openrouter.ai/api/v1/chat/completions'
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`,
+                'HTTP-Referer': 'https://samidtrack.com', // Optional: requires a valid URL
+                'X-Title': 'SamidTrack Finance'
+            }
+            bodyPayload = {
+                model: 'mistralai/mistral-7b-instruct:free', // More stable free model
+                messages: [
+                    { role: 'user', content: prompt }
+                ],
+                temperature: 0.1,
+                max_tokens: 50
+            }
+        }
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: headers as any,
+            body: JSON.stringify(bodyPayload)
+        })
 
         const data = await response.json()
 
-        if (!response.ok || !data.candidates?.[0]?.content?.parts?.[0]?.text) {
-            return await fallbackCategorization(description, type)
+        let suggestedName = ''
+
+        if (isOpenRouter) {
+            if (!response.ok || !data.choices?.[0]?.message?.content) {
+                console.error('OpenRouter Error:', data)
+                return await fallbackCategorization(description, type)
+            }
+            suggestedName = data.choices[0].message.content.trim()
+        } else {
+            if (!response.ok || !data.candidates?.[0]?.content?.parts?.[0]?.text) {
+                console.error('Gemini Error:', data)
+                return await fallbackCategorization(description, type)
+            }
+            suggestedName = data.candidates[0].content.parts[0].text.trim()
         }
 
-        const suggestedName = data.candidates[0].content.parts[0].text.trim()
+        // suggestedName is already extracted above
 
         // Find matching category
         const matchedCategory = categories.find(
-            c => c.name.toLowerCase() === suggestedName.toLowerCase()
+            (c: any) => c.name.toLowerCase() === suggestedName.toLowerCase()
         )
 
         if (matchedCategory) {
@@ -82,7 +117,7 @@ Balas HANYA dengan nama kategori yang paling sesuai, tanpa penjelasan.`
 
         // Partial match
         const partialMatch = categories.find(
-            c => c.name.toLowerCase().includes(suggestedName.toLowerCase()) ||
+            (c: any) => c.name.toLowerCase().includes(suggestedName.toLowerCase()) ||
                 suggestedName.toLowerCase().includes(c.name.toLowerCase())
         )
 
@@ -117,22 +152,21 @@ async function fallbackCategorization(description: string, type?: string) {
 
     // Keyword mapping for common expenses
     const keywordMap: Record<string, string[]> = {
-        'Makanan & Minuman': ['makan', 'nasi', 'ayam', 'kopi', 'teh', 'snack', 'jajan', 'gofood', 'grabfood', 'resto', 'restaurant', 'cafe', 'warung'],
-        'Transportasi': ['bensin', 'parkir', 'ojol', 'gojek', 'grab', 'taxi', 'bus', 'kereta', 'toll', 'tol', 'transport'],
+        'Makanan': ['makan', 'nasi', 'ayam', 'kopi', 'teh', 'snack', 'jajan', 'gofood', 'grabfood', 'resto', 'restaurant', 'cafe', 'warung'],
+        'Transportasi': ['bensin', 'pertamax', 'pertalite', 'solar', 'shell', 'parkir', 'ojol', 'gojek', 'grab', 'taxi', 'bus', 'kereta', 'toll', 'tol', 'transport'],
         'Belanja': ['belanja', 'beli', 'shopee', 'tokped', 'tokopedia', 'lazada', 'bukalapak', 'mall', 'supermarket', 'indomaret', 'alfamart'],
         'Hiburan': ['nonton', 'bioskop', 'game', 'spotify', 'netflix', 'youtube', 'hiburan', 'entertainment'],
         'Tagihan': ['listrik', 'pln', 'air', 'pdam', 'internet', 'wifi', 'pulsa', 'paket data', 'telepon'],
         'Kesehatan': ['obat', 'apotek', 'dokter', 'rumah sakit', 'klinik', 'kesehatan', 'vitamin'],
         'Pendidikan': ['kursus', 'sekolah', 'kuliah', 'buku', 'belajar', 'les'],
         'Gaji': ['gaji', 'salary', 'upah', 'honor', 'honorarium'],
-        'Bonus': ['bonus', 'thr', 'insentif', 'komisi'],
-        'Investasi': ['dividen', 'bunga', 'return', 'profit', 'capital gain'],
+        'Hadiah': ['hadiah', 'kado', 'angpao', 'donasi', 'sedekah'],
         'Lainnya': []
     }
 
     for (const [categoryName, keywords] of Object.entries(keywordMap)) {
         if (keywords.some(kw => desc.includes(kw))) {
-            const match = categories.find(c => c.name === categoryName)
+            const match = categories.find((c: any) => c.name === categoryName)
             if (match) {
                 return NextResponse.json({
                     success: true,
@@ -148,7 +182,7 @@ async function fallbackCategorization(description: string, type?: string) {
     }
 
     // Return "Lainnya" as default
-    const defaultCategory = categories.find(c => c.name === 'Lainnya')
+    const defaultCategory = categories.find((c: any) => c.name === 'Lainnya')
     if (defaultCategory) {
         return NextResponse.json({
             success: true,

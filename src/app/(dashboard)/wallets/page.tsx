@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState } from 'react'
+import useSWR, { mutate } from 'swr'
 import styles from './page.module.css'
 
 interface Wallet {
@@ -12,6 +13,9 @@ interface Wallet {
     icon: string
     currency: string
 }
+
+// Fetcher for SWR
+const fetcher = (url: string) => fetch(url).then((res) => res.json().then(data => data.data))
 
 function formatCurrency(amount: number): string {
     return new Intl.NumberFormat('id-ID', {
@@ -34,8 +38,7 @@ const walletColors = [
 ]
 
 export default function WalletsPage() {
-    const [wallets, setWallets] = useState<Wallet[]>([])
-    const [loading, setLoading] = useState(true)
+    // Local state for UI
     const [showModal, setShowModal] = useState(false)
     const [editingId, setEditingId] = useState<string | null>(null)
 
@@ -47,22 +50,9 @@ export default function WalletsPage() {
         icon: '💵'
     })
 
-    const fetchWallets = useCallback(async () => {
-        try {
-            setLoading(true)
-            const res = await fetch('/api/wallets')
-            const data = await res.json()
-            if (data.success) setWallets(data.data)
-        } catch (error) {
-            console.error('Error fetching wallets:', error)
-        } finally {
-            setLoading(false)
-        }
-    }, [])
-
-    useEffect(() => {
-        fetchWallets()
-    }, [fetchWallets])
+    // SWR Data Fetching
+    const { data: wallets = [], error, isLoading } = useSWR<Wallet[]>('/api/wallets', fetcher)
+    const loading = isLoading
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -86,7 +76,8 @@ export default function WalletsPage() {
                 setShowModal(false)
                 setEditingId(null)
                 resetForm()
-                fetchWallets()
+                mutate('/api/wallets')
+                mutate('/api/dashboard') // Refresh dashboard
             } else {
                 alert(data.error || 'Gagal menyimpan')
             }
@@ -103,7 +94,8 @@ export default function WalletsPage() {
             const data = await res.json()
 
             if (data.success) {
-                fetchWallets()
+                mutate('/api/wallets')
+                mutate('/api/dashboard')
             } else {
                 alert(data.error || 'Gagal menghapus')
             }

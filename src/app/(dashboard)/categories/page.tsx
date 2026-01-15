@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState } from 'react'
+import useSWR, { mutate } from 'swr'
 import styles from './page.module.css'
 
 interface Category {
@@ -18,9 +19,11 @@ const categoryColors = [
     '#10B981', '#6366F1', '#14B8A6', '#F97316', '#84CC16'
 ]
 
+// Fetcher for SWR
+const fetcher = (url: string) => fetch(url).then((res) => res.json().then(data => data.data))
+
 export default function CategoriesPage() {
-    const [categories, setCategories] = useState<Category[]>([])
-    const [loading, setLoading] = useState(true)
+    // Local UI state
     const [showModal, setShowModal] = useState(false)
     const [activeTab, setActiveTab] = useState<'EXPENSE' | 'INCOME'>('EXPENSE')
 
@@ -31,22 +34,9 @@ export default function CategoriesPage() {
         type: 'EXPENSE' as 'INCOME' | 'EXPENSE'
     })
 
-    const fetchCategories = useCallback(async () => {
-        try {
-            setLoading(true)
-            const res = await fetch('/api/categories')
-            const data = await res.json()
-            if (data.success) setCategories(data.data)
-        } catch (error) {
-            console.error('Error fetching categories:', error)
-        } finally {
-            setLoading(false)
-        }
-    }, [])
-
-    useEffect(() => {
-        fetchCategories()
-    }, [fetchCategories])
+    // SWR Data Fetching
+    const { data: categories = [], isLoading } = useSWR<Category[]>('/api/categories', fetcher)
+    const loading = isLoading
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -63,7 +53,7 @@ export default function CategoriesPage() {
             if (data.success) {
                 setShowModal(false)
                 setForm({ name: '', icon: '📦', color: '#3B82F6', type: activeTab })
-                fetchCategories()
+                mutate('/api/categories')
             } else {
                 alert(data.error || 'Gagal menyimpan')
             }

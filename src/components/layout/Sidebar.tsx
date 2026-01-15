@@ -44,7 +44,19 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
 
 export default function Sidebar() {
     const pathname = usePathname()
+    // Add router
+    const router = require('next/navigation').useRouter()
     const { isOpen, toggle } = useSidebar()
+
+    const handleLogout = async () => {
+        try {
+            await fetch('/api/auth/logout', { method: 'POST' })
+            router.push('/login')
+            router.refresh()
+        } catch (error) {
+            console.error('Logout failed', error)
+        }
+    }
 
     return (
         <>
@@ -73,7 +85,7 @@ export default function Sidebar() {
                 </nav>
 
                 <div className={styles.footer}>
-                    <button className={styles.logoutBtn}>
+                    <button className={styles.logoutBtn} onClick={handleLogout}>
                         <span className={styles.navIcon}>🚪</span>
                         {isOpen && <span>Keluar</span>}
                     </button>

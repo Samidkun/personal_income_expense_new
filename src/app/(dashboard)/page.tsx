@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState } from 'react'
+import useSWR from 'swr'
 import styles from './page.module.css'
 
 interface DashboardStats {
@@ -32,6 +33,9 @@ interface DashboardStats {
     }>
 }
 
+// Fetcher for SWR
+const fetcher = (url: string) => fetch(url).then((res) => res.json().then(data => data.data))
+
 function formatCurrency(amount: number): string {
     return new Intl.NumberFormat('id-ID', {
         style: 'currency',
@@ -50,31 +54,11 @@ function formatDate(dateString: string): string {
 }
 
 export default function DashboardPage() {
-    const [stats, setStats] = useState<DashboardStats | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
+    // SWR Hook
+    const { data: stats, error, isLoading } = useSWR<DashboardStats>('/api/dashboard', fetcher)
 
-    const fetchDashboard = useCallback(async () => {
-        try {
-            setLoading(true)
-            const res = await fetch('/api/dashboard')
-            const data = await res.json()
-
-            if (data.success) {
-                setStats(data.data)
-            } else {
-                setError(data.error || 'Gagal memuat data')
-            }
-        } catch {
-            setError('Terjadi kesalahan saat memuat data')
-        } finally {
-            setLoading(false)
-        }
-    }, [])
-
-    useEffect(() => {
-        fetchDashboard()
-    }, [fetchDashboard])
+    // Derived state
+    const loading = isLoading
 
     if (loading) {
         return (
@@ -89,8 +73,8 @@ export default function DashboardPage() {
             <div className="empty-state">
                 <div className="empty-state-icon">⚠️</div>
                 <h3 className="empty-state-title">Terjadi Kesalahan</h3>
-                <p className="empty-state-desc">{error}</p>
-                <button className="btn btn-primary" onClick={fetchDashboard}>
+                <p className="empty-state-desc">Gagal memuat data dashboard</p>
+                <button className="btn btn-primary" onClick={() => window.location.reload()}>
                     Coba Lagi
                 </button>
             </div>

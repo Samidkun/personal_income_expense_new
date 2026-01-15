@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState } from 'react'
+import useSWR from 'swr'
 import styles from './page.module.css'
 
 interface Transaction {
@@ -19,6 +20,9 @@ interface DayData {
     expense: number
 }
 
+// Fetcher for SWR
+const fetcher = (url: string) => fetch(url).then((res) => res.json().then(data => data.data))
+
 function formatCurrency(amount: number): string {
     return new Intl.NumberFormat('id-ID', {
         style: 'currency',
@@ -29,34 +33,22 @@ function formatCurrency(amount: number): string {
 }
 
 export default function CalendarPage() {
-    const [transactions, setTransactions] = useState<Transaction[]>([])
-    const [loading, setLoading] = useState(true)
     const [selectedDate, setSelectedDate] = useState<Date | null>(null)
 
     const now = new Date()
     const [month, setMonth] = useState(now.getMonth())
     const [year, setYear] = useState(now.getFullYear())
 
-    const fetchTransactions = useCallback(async () => {
-        try {
-            setLoading(true)
-            const startDate = new Date(year, month, 1).toISOString()
-            const endDate = new Date(year, month + 1, 0).toISOString()
+    // SWR Data Fetching
+    const startDate = new Date(year, month, 1).toISOString()
+    const endDate = new Date(year, month + 1, 0).toISOString()
 
-            const res = await fetch(`/api/transactions?startDate=${startDate}&endDate=${endDate}&limit=100`)
-            const data = await res.json()
-
-            if (data.success) setTransactions(data.data)
-        } catch (error) {
-            console.error('Error fetching transactions:', error)
-        } finally {
-            setLoading(false)
-        }
-    }, [month, year])
-
-    useEffect(() => {
-        fetchTransactions()
-    }, [fetchTransactions])
+    // Only fetch if we have valid dates (which we always do here)
+    const { data: transactions = [], isLoading } = useSWR<Transaction[]>(
+        `/api/transactions?startDate=${startDate}&endDate=${endDate}&limit=100`,
+        fetcher
+    )
+    const loading = isLoading
 
     // Generate calendar data
     const firstDayOfMonth = new Date(year, month, 1)

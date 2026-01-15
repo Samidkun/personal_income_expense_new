@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState } from 'react'
+import useSWR, { mutate } from 'swr'
 import styles from './page.module.css'
 
 interface Reminder {
@@ -12,6 +13,9 @@ interface Reminder {
     isCompleted: boolean
     notifyDaysBefore: number
 }
+
+// Fetcher for SWR
+const fetcher = (url: string) => fetch(url).then((res) => res.json().then(data => data.data))
 
 function formatCurrency(amount: number): string {
     return new Intl.NumberFormat('id-ID', {
@@ -40,8 +44,7 @@ function getDaysUntil(dateString: string): number {
 }
 
 export default function RemindersPage() {
-    const [reminders, setReminders] = useState<Reminder[]>([])
-    const [loading, setLoading] = useState(true)
+    // Local state
     const [showModal, setShowModal] = useState(false)
     const [editId, setEditId] = useState<string | null>(null)
     const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('pending')
@@ -54,25 +57,9 @@ export default function RemindersPage() {
         notifyDaysBefore: '1'
     })
 
-    const fetchReminders = useCallback(async () => {
-        try {
-            setLoading(true)
-            const res = await fetch('/api/reminders')
-            const data = await res.json()
-
-            if (data.success) {
-                setReminders(data.data)
-            }
-        } catch (error) {
-            console.error('Error fetching reminders:', error)
-        } finally {
-            setLoading(false)
-        }
-    }, [])
-
-    useEffect(() => {
-        fetchReminders()
-    }, [fetchReminders])
+    // SWR Fetching
+    const { data: reminders = [], isLoading } = useSWR<Reminder[]>('/api/reminders', fetcher)
+    const loading = isLoading
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -96,7 +83,7 @@ export default function RemindersPage() {
             if (data.success) {
                 setShowModal(false)
                 resetForm()
-                fetchReminders()
+                mutate('/api/reminders')
             } else {
                 alert(data.error || 'Gagal menyimpan')
             }
@@ -112,7 +99,7 @@ export default function RemindersPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ isCompleted: !isCompleted })
             })
-            fetchReminders()
+            mutate('/api/reminders')
         } catch (error) {
             console.error('Error toggling:', error)
         }
@@ -126,7 +113,7 @@ export default function RemindersPage() {
             const data = await res.json()
 
             if (data.success) {
-                fetchReminders()
+                mutate('/api/reminders')
             }
         } catch (error) {
             console.error('Error deleting:', error)

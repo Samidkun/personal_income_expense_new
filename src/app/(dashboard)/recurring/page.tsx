@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState } from 'react'
+import useSWR, { mutate } from 'swr'
 import styles from './page.module.css'
 
 interface Category {
@@ -30,6 +31,9 @@ interface RecurringTransaction {
     isActive: boolean
 }
 
+// Fetcher for SWR
+const fetcher = (url: string) => fetch(url).then((res) => res.json().then(data => data.data))
+
 function formatCurrency(amount: number): string {
     return new Intl.NumberFormat('id-ID', {
         style: 'currency',
@@ -55,10 +59,7 @@ const frequencyLabels: Record<string, string> = {
 }
 
 export default function RecurringPage() {
-    const [recurring, setRecurring] = useState<RecurringTransaction[]>([])
-    const [categories, setCategories] = useState<Category[]>([])
-    const [wallets, setWallets] = useState<Wallet[]>([])
-    const [loading, setLoading] = useState(true)
+    // Local state
     const [showModal, setShowModal] = useState(false)
     const [editId, setEditId] = useState<string | null>(null)
 
@@ -73,34 +74,12 @@ export default function RecurringPage() {
         endDate: ''
     })
 
-    const fetchData = useCallback(async () => {
-        try {
-            setLoading(true)
-            const [recRes, catRes, walRes] = await Promise.all([
-                fetch('/api/recurring'),
-                fetch('/api/categories'),
-                fetch('/api/wallets')
-            ])
+    // SWR Fetching
+    const { data: recurring = [], isLoading: recLoading } = useSWR<RecurringTransaction[]>('/api/recurring', fetcher)
+    const { data: categories = [] } = useSWR<Category[]>('/api/categories', fetcher)
+    const { data: wallets = [] } = useSWR<Wallet[]>('/api/wallets', fetcher)
 
-            const [recData, catData, walData] = await Promise.all([
-                recRes.json(),
-                catRes.json(),
-                walRes.json()
-            ])
-
-            if (recData.success) setRecurring(recData.data)
-            if (catData.success) setCategories(catData.data)
-            if (walData.success) setWallets(walData.data)
-        } catch (error) {
-            console.error('Error fetching data:', error)
-        } finally {
-            setLoading(false)
-        }
-    }, [])
-
-    useEffect(() => {
-        fetchData()
-    }, [fetchData])
+    const loading = recLoading
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -124,7 +103,7 @@ export default function RecurringPage() {
             if (data.success) {
                 setShowModal(false)
                 resetForm()
-                fetchData()
+                mutate('/api/recurring')
             } else {
                 alert(data.error || 'Gagal menyimpan')
             }
@@ -141,7 +120,7 @@ export default function RecurringPage() {
             const data = await res.json()
 
             if (data.success) {
-                fetchData()
+                mutate('/api/recurring')
             }
         } catch (error) {
             console.error('Error deleting:', error)
@@ -155,7 +134,7 @@ export default function RecurringPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ isActive: !isActive })
             })
-            fetchData()
+            mutate('/api/recurring')
         } catch (error) {
             console.error('Error toggling:', error)
         }

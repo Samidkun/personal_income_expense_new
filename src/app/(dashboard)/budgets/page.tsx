@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState } from 'react'
+import useSWR, { mutate } from 'swr'
 import styles from './page.module.css'
 
 interface Category {
@@ -25,6 +26,9 @@ interface Budget {
     alertThreshold: number
 }
 
+// Fetcher for SWR
+const fetcher = (url: string) => fetch(url).then((res) => res.json().then(data => data.data))
+
 function formatCurrency(amount: number): string {
     return new Intl.NumberFormat('id-ID', {
         style: 'currency',
@@ -35,11 +39,8 @@ function formatCurrency(amount: number): string {
 }
 
 export default function BudgetsPage() {
-    const [budgets, setBudgets] = useState<Budget[]>([])
-    const [categories, setCategories] = useState<Category[]>([])
-    const [loading, setLoading] = useState(true)
+    // Local state
     const [showModal, setShowModal] = useState(false)
-
     const now = new Date()
     const [month, setMonth] = useState(now.getMonth() + 1)
     const [year, setYear] = useState(now.getFullYear())
@@ -50,31 +51,14 @@ export default function BudgetsPage() {
         alertThreshold: '80'
     })
 
-    const fetchData = useCallback(async () => {
-        try {
-            setLoading(true)
-            const [budgetRes, catRes] = await Promise.all([
-                fetch(`/api/budgets?month=${month}&year=${year}`),
-                fetch('/api/categories?type=EXPENSE')
-            ])
+    // SWR Fetching
+    const { data: budgets = [], isLoading: budgetLoading } = useSWR<Budget[]>(
+        `/api/budgets?month=${month}&year=${year}`,
+        fetcher
+    )
+    const { data: categories = [] } = useSWR<Category[]>('/api/categories?type=EXPENSE', fetcher)
 
-            const [budgetData, catData] = await Promise.all([
-                budgetRes.json(),
-                catRes.json()
-            ])
-
-            if (budgetData.success) setBudgets(budgetData.data)
-            if (catData.success) setCategories(catData.data)
-        } catch (error) {
-            console.error('Error fetching budgets:', error)
-        } finally {
-            setLoading(false)
-        }
-    }, [month, year])
-
-    useEffect(() => {
-        fetchData()
-    }, [fetchData])
+    const loading = budgetLoading
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -97,7 +81,7 @@ export default function BudgetsPage() {
             if (data.success) {
                 setShowModal(false)
                 setForm({ categoryId: '', amount: '', alertThreshold: '80' })
-                fetchData()
+                mutate(`/api/budgets?month=${month}&year=${year}`)
             } else {
                 alert(data.error || 'Gagal menyimpan')
             }
