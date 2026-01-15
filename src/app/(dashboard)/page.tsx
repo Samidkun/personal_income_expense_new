@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
 import useSWR from 'swr'
+import AiInsights from '@/components/AiInsights'
 import styles from './page.module.css'
 
 interface DashboardStats {
@@ -113,6 +113,11 @@ export default function DashboardPage() {
                         {(stats?.expenseChange || 0) >= 0 ? '↑' : '↓'} {Math.abs(stats?.expenseChange || 0).toFixed(1)}%
                     </span>
                 </div>
+            </div>
+
+            {/* AI Insights Section */}
+            <div style={{ marginBottom: '2rem' }}>
+                <AiInsights />
             </div>
 
             <div className={styles.grid}>
