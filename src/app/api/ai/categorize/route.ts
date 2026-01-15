@@ -51,8 +51,6 @@ Balas HANYA dengan nama kategori yang paling sesuai, tanpa penjelasan.`
         }
 
         const isOpenRouter = apiKey.startsWith('sk-or-')
-        console.log('[AI] Key Type:', isOpenRouter ? 'OpenRouter' : 'Gemini Direct')
-        console.log('[AI] Processing:', description)
 
         if (isOpenRouter) {
             apiUrl = 'https://openrouter.ai/api/v1/chat/completions'
