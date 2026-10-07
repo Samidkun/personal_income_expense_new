@@ -1,5 +1,11 @@
 # 💰 SamidTrackFinance
 
+
+
+<p align="center">
+  <img src="docs/screenshots/preview.png" alt="Application Preview" width="100%" style="border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1);" />
+</p>
+
 **SamidTrackFinance** is a modern, personal finance management application built to help users track expenses, income, and budgets with the power of **Artificial Intelligence** and **Real-time Notifications**.
 
 Built with love using **Next.js 14** (App Router), **Prisma**, **PostgreSQL**, and styled with **Vanilla CSS Modules** for maximum performance.
